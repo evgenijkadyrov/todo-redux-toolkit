@@ -1,51 +1,67 @@
-import React, { ChangeEvent, KeyboardEvent, useState } from 'react';
-import { IconButton, TextField } from '@mui/material';
-import { AddBox } from '@mui/icons-material';
+import React, {ChangeEvent, KeyboardEvent, useState} from 'react';
+import {IconButton, TextField} from '@mui/material';
+import {AddBox} from '@mui/icons-material';
+import {RejectedValueType} from "common/utils/createAsyncThunk";
 
 type AddItemFormPropsType = {
-	addItem: (title: string) => void
-	disabled?: boolean
+    addItem: (title: string) => Promise<any>
+    disabled?: boolean
 }
 
-export const AddItemForm = React.memo(function ({addItem, disabled = false}: AddItemFormPropsType) {
+export const AddItemForm = React.memo(function ({
+                                                    addItem,
+                                                    disabled = false
+                                                }: AddItemFormPropsType) {
 
-	let [title, setTitle] = useState('')
-	let [error, setError] = useState<string | null>(null)
+    let [title, setTitle] = useState('')
+    let [error, setError] = useState<string | null>(null)
 
-	const addItemHandler = () => {
-		if (title.trim() !== '') {
-			addItem(title);
-			setTitle('');
-		} else {
-			setError('Title is required');
-		}
-	}
+    const addItemHandler = () => {
+        if (title.trim() !== '') {
+            addItem(title)
+                .then(() => {
 
-	const onChangeHandler = (e: ChangeEvent<HTMLInputElement>) => {
-		setTitle(e.currentTarget.value)
-	}
+                    setTitle('');
+                })
+                .catch((error: RejectedValueType) => {
+                    if (error.data) {
+                        const messages = error.data.messages
+                        setError(messages.length ? messages[0] : 'Some error')
+                    }
 
-	const onKeyPressHandler = (e: KeyboardEvent<HTMLInputElement>) => {
-		if (error !== null) {
-			setError(null);
-		}
-		if (e.charCode === 13) {
-			addItemHandler();
-		}
-	}
+                });
 
-	return <div>
-		<TextField variant="outlined"
-							 disabled={disabled}
-							 error={!!error}
-							 value={title}
-							 onChange={onChangeHandler}
-							 onKeyPress={onKeyPressHandler}
-							 label="Title"
-							 helperText={error}
-		/>
-		<IconButton color="primary" onClick={addItemHandler} disabled={disabled}>
-			<AddBox/>
-		</IconButton>
-	</div>
+        } else {
+            setError('Title is required');
+        }
+    }
+
+    const onChangeHandler = (e: ChangeEvent<HTMLInputElement>) => {
+        setTitle(e.currentTarget.value)
+    }
+
+    const onKeyPressHandler = (e: KeyboardEvent<HTMLInputElement>) => {
+        if (error !== null) {
+            setError(null);
+        }
+        if (e.charCode === 13) {
+            addItemHandler();
+        }
+    }
+
+    return <div>
+        <TextField variant="outlined"
+
+                   disabled={disabled}
+                   error={!!error}
+                   value={title}
+                   onChange={onChangeHandler}
+                   onKeyPress={onKeyPressHandler}
+                   label="Title"
+                   helperText={error}
+        />
+        <IconButton color="primary" onClick={addItemHandler} disabled={disabled}>
+            <AddBox/>
+        </IconButton>
+    </div>
 })

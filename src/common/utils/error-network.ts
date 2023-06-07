@@ -2,6 +2,11 @@ import {appActions} from 'app/app-reducer'
 import {Dispatch} from 'redux'
 import axios, {AxiosError} from "axios";
 
+/**
+ * Function for errors
+ *@param e
+ * @ param dispatch  - fnction
+ */
 
 export const handleServerNetworkError = (e: unknown, dispatch: Dispatch) => {
 

@@ -1,44 +1,68 @@
 import React from 'react'
-import { useFormik } from 'formik'
-import { useSelector } from 'react-redux'
-import { loginTC } from './auth-reducer'
-import { AppRootStateType } from '../../app/store'
-import { Navigate } from 'react-router-dom'
-import { useAppDispatch } from '../../hooks/useAppDispatch';
-import { Button, Checkbox, FormControl, FormControlLabel, FormGroup, FormLabel, Grid, TextField } from '@mui/material'
+import {FormikHelpers, useFormik} from 'formik'
+import {useSelector} from 'react-redux'
+import {authThunk} from './auth-reducer'
+import {Navigate} from 'react-router-dom'
+import {
+    Button,
+    Checkbox,
+    FormControl,
+    FormControlLabel,
+    FormGroup,
+    FormLabel,
+    Grid,
+    TextField
+} from '@mui/material'
 import {selectIsLoggedIn} from "features/auth/auth.selectors";
+import {LoginParamsType, ResponseType} from "features/todolists-list/todolists/todolists-api";
+import {useActions} from "hooks/useActions";
 
+type FormikErrorsType = Partial<Omit<LoginParamsType, 'captcha'>>
 export const Login = () => {
-    const dispatch = useAppDispatch()
+
+    const {login} = useActions(authThunk)
 
     const isLoggedIn = useSelector(selectIsLoggedIn);
 
     const formik = useFormik({
         validate: (values) => {
+            const errors: FormikErrorsType = {}
             if (!values.email) {
-                return {
-                    email: 'Email is required'
-                }
+
+                errors.email = 'Email is required'
+
             }
             if (!values.password) {
-                return {
-                    password: 'Password is required'
-                }
-            }
+                errors.password = 'Password is required'
 
+            } else if(values.password.length<3){
+                errors.password= 'Must be 3 characters at least'
+            }
+            return errors
         },
         initialValues: {
             email: '',
             password: '',
             rememberMe: false
         },
-        onSubmit: values => {
-            dispatch(loginTC(values));
+        onSubmit: (values, formikHelper: FormikHelpers<LoginParamsType>) => {
+            login({data: values})
+                .unwrap()
+                .catch((reason: ResponseType) => {
+                    const {fieldsErrors} = reason
+                    if (fieldsErrors) {
+                        fieldsErrors.forEach(f => {
+                            formikHelper.setFieldError(f.field, f.error)
+                        })
+                    }
+
+
+                });
         },
     })
 
     if (isLoggedIn) {
-        return <Navigate to={"/"} />
+        return <Navigate to={"/"}/>
     }
 
 
@@ -48,8 +72,9 @@ export const Login = () => {
                 <FormControl>
                     <FormLabel>
                         <p>
-                            To log in get registered <a href={'https://social-network.samuraijs.com/'}
-                                                        target={'_blank'}>here</a>
+                            To log in get registered <a
+                            href={'https://social-network.samuraijs.com/'}
+                            target={'_blank'}>here</a>
                         </p>
                         <p>
                             or use common test account credentials:
@@ -73,7 +98,8 @@ export const Login = () => {
                             margin="normal"
                             {...formik.getFieldProps("password")}
                         />
-                        {formik.errors.password ? <div>{formik.errors.password}</div> : null}
+                        {formik.errors.password ?
+                            <div>{formik.errors.password}</div> : null}
                         <FormControlLabel
                             label={'Remember me'}
                             control={<Checkbox
@@ -81,7 +107,8 @@ export const Login = () => {
                                 checked={formik.values.rememberMe}
                             />}
                         />
-                        <Button type={'submit'} variant={'contained'} color={'primary'}>Login</Button>
+                        <Button type={'submit'} variant={'contained'}
+                                color={'primary'}>Login</Button>
                     </FormGroup>
                 </FormControl>
             </form>
